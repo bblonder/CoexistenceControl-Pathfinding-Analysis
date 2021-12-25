@@ -32,14 +32,19 @@ assign_params_to_state <- function(data, params_A, params_r)
   data_ss = data %>% select(from, to, name)
   
   # apply states and environments to all rows (this is the 'from')
-  state_env_from = rbindlist(lapply(data_ss$from, get_state_env))
+  message('getting state/env combos- from')
+  pb <- progress_bar$new(total = nrow(data_ss), format = "[:bar] :current :total")
+  state_env_from = rbindlist(lapply(data_ss$from, function(x) {pb$tick(); get_state_env(x)}))
   names(state_env_from) = paste(names(state_env_from),"from",sep="_")
-  state_env_to = rbindlist(lapply(data_ss$to, get_state_env))
+  message('getting state/env combos- to')
+  pb <- progress_bar$new(total = nrow(data_ss), format = "[:bar] :current :total")
+  state_env_to = rbindlist(lapply(data_ss$to, function(x) {pb$tick(); get_state_env(x)}))
   names(state_env_to) = paste(names(state_env_to),"to",sep="_")
   # put it all together
   data_ss_state_env = cbind(name=as.character(data_ss$name), state_env_from, state_env_to)
   
   # make progress bar
+  message('final param values assignment')
   pb <- progress_bar$new(total = nrow(data_ss), format = "[:bar] :current :total")
   # assign values for each state
   result_final_raw = lapply(1:nrow(data_ss), function(i)
@@ -206,6 +211,12 @@ process_dataset <- function(fn_astar, fn_A, fn_r, name, params_A=NULL, params_r=
   # do additional prep work
   data = prep_data(data, params_A, params_r)
   
+  # get info on fraction of states
+  text_state_counts = readLines(gsub("csv$","txt",fn_astar))[19:20]
+  nums_state_counts = as.numeric(sapply(strsplit(text_state_counts, ": "), tail, 1))
+  data$num_states_candidate = nums_state_counts[1]
+  data$num_states_total = nums_state_counts[2]
+  
   return(list(data=data,
               params_r=params_r,
               params_A=params_A, 
@@ -229,15 +240,20 @@ data_human_gut = process_dataset(fn_astar = '../CoexistenceControl-Private/data/
                                  fn_r = '../CoexistenceControl-Private/data/dataset/venturelli/r_vector.csv',
                                  name = 'Human gut')
 
-data_ciliate_small = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Maynard15-19-23_Mon_29_Nov_2021_17_19.csv',
+data_ciliate_t1 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Maynard_Thu_16_Dec_2021_14_54.csv',
+                                     fn_A = '../CoexistenceControl-Private/data/dataset/maynard/17/a_matrix.csv',
+                                     fn_r = '../CoexistenceControl-Private/data/dataset/maynard/17/r_vector.csv',
+                                     name = 'Ciliate (t1)')
+
+data_ciliate_t3 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Maynard15-19-23_Mon_29_Nov_2021_17_19.csv',
                                  fn_A = c('../CoexistenceControl-Private/data/dataset/maynard/15/a_matrix.csv','../CoexistenceControl-Private/data/dataset/maynard/19/a_matrix.csv','../CoexistenceControl-Private/data/dataset/maynard/23/a_matrix.csv'),
                                  fn_r = c('../CoexistenceControl-Private/data/dataset/maynard/15/r_vector.csv','../CoexistenceControl-Private/data/dataset/maynard/19/r_vector.csv','../CoexistenceControl-Private/data/dataset/maynard/23/r_vector.csv'),
-                                 name = 'Ciliate (small)')
+                                 name = 'Ciliate (t3)')
 
-data_ciliate_large = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Maynard15-17-19-21-23_Mon_29_Nov_2021_17_20.csv',
+data_ciliate_t5 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Maynard15-17-19-21-23_Mon_29_Nov_2021_17_20.csv',
                                      fn_A = c('../CoexistenceControl-Private/data/dataset/maynard/15/a_matrix.csv','../CoexistenceControl-Private/data/dataset/maynard/17/a_matrix.csv','../CoexistenceControl-Private/data/dataset/maynard/19/a_matrix.csv','../CoexistenceControl-Private/data/dataset/maynard/21/a_matrix.csv','../CoexistenceControl-Private/data/dataset/maynard/23/a_matrix.csv'),
                                      fn_r = c('../CoexistenceControl-Private/data/dataset/maynard/15/r_vector.csv','../CoexistenceControl-Private/data/dataset/maynard/17/r_vector.csv','../CoexistenceControl-Private/data/dataset/maynard/19/r_vector.csv','../CoexistenceControl-Private/data/dataset/maynard/21/r_vector.csv','../CoexistenceControl-Private/data/dataset/maynard/23/r_vector.csv'),
-                                     name = 'Ciliate (large)')
+                                     name = 'Ciliate (t5)')
 
 data_protist = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Carrara_Mon_29_Nov_2021_17_19.csv',
                                  fn_A = '../CoexistenceControl-Private/data/dataset/carrara/a_matrix.csv',
@@ -267,19 +283,21 @@ data_simulated_n15_t1 = process_dataset(fn_astar = '../CoexistenceControl-Privat
 
 # put datasets together
 data_processed = rbind(data_mouse_gut$data, 
-                                           data_human_gut$data, 
-                                           data_ciliate_small$data, 
-                                           data_ciliate_large$data, 
-                                           data_protist$data,
-                                           data_simulated_n5_t3$data,
-                                           data_simulated_n10_t1$data,
-                                           data_simulated_n15_t1$data
+                       data_human_gut$data, 
+                       data_ciliate_t1$data, 
+                       data_ciliate_t3$data, 
+                       data_ciliate_t5$data, 
+                       data_protist$data,
+                       data_simulated_n5_t3$data,
+                       data_simulated_n10_t1$data,
+                       data_simulated_n15_t1$data
   )
 
 # also make a list by name of datasets
 datasets_all = list(
-  `Ciliate (large)`=data_ciliate_large,
-  `Ciliate (small)`=data_ciliate_small,
+  `Ciliate (t5)`=data_ciliate_t5,
+  `Ciliate (t3)`=data_ciliate_t3,
+  `Ciliate (t1)`=data_ciliate_t1,
   `Human gut`=data_human_gut,
   `Mouse gut`=data_mouse_gut,
   `Protist`=data_protist,
@@ -295,14 +313,20 @@ make_taxa_df <- function(dataset)
 }
 df_taxa = rbindlist(lapply(list(data_mouse_gut, 
                                 data_human_gut, 
-                                data_ciliate_small, 
-                                data_ciliate_large, 
+                                data_ciliate_t1, 
+                                data_ciliate_t3, 
+                                data_ciliate_t5, 
                                 data_protist,
                                 data_simulated_n5_t3,
                                 data_simulated_n10_t1,
                                 data_simulated_n15_t1), make_taxa_df))
-warning('need to shorten names')
-
+# make short names
+short_names = sapply(df_taxa$taxon, function(taxon) { 
+  paste(sapply(strsplit(taxon, split=" ")[[1]], function(x) {substr(x,start=1,stop=3)}),collapse="") 
+})
+short_names = gsub("uncl\\.","",short_names)
+short_names = gsub("unduncMol","undMol",short_names)
+df_taxa$taxon[df_taxa$name=="Mouse gut"] = short_names[df_taxa$name=="Mouse gut"]
 
 # additional nomenclature
 edge_labels_long = c(`>`='Natural',`-`='Species removal',`+`='Species addition',`=`='Environment change')

@@ -1,7 +1,7 @@
 library(dplyr)
 library(ggplot2)
 
-files_simulated = dir(path='CoexistenceControl-Private/data/results/synthetic',
+files_simulated = dir(path='../CoexistenceControl-Private/data/results/synthetic',
                       pattern='*csv',
                       full.names = TRUE,
                       recursive = TRUE)
@@ -68,13 +68,13 @@ process_simulated <- function(fn)
   return(df_stats)
 }
 
-stats_all = rbindlist(lapply(files_simulated,process_simulated))
+stats_all = rbindlist(lapply(files_simulated,process_simulated)) %>%
+  mutate(name = paste(num_species, num_env))
 
-ggplot(stats_all, aes(x=proportional_cost_improvement_mean,color=paste(num_species, num_env))) +
-         geom_density()
+table_glv_stats = stats_all %>% 
+  group_by(name) %>%
+  summarize(across(mu.A:sigma.r, mean))
 
-ggplot(stats_all, aes(x=fraction_fs,color=paste(num_species, num_env))) +
-  geom_density()
-
+write.csv(table_glv_stats, file='outputs/table_glv_stats.csv', row.names = FALSE)
 
 
