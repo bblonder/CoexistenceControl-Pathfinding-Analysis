@@ -400,7 +400,7 @@ for (i in 1:nrow(candidate_table))
 
 best_improvements  = candidate_table[candidate_table$net_cost_improvement == 6,]
 
-for (i in 1:5)#nrow(best_improvements))
+for (i in 1:1)#nrow(best_improvements))
 {
   # find the best path
   epath_this = as.numeric(strsplit(best_improvements[i,"epath"],"-")[[1]])
