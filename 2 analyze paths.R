@@ -22,6 +22,12 @@ if (!file.exists('outputs'))
 }
 
 
+int_breaks_rounded <- function(x, n = 5)  pretty(x, n)[round(pretty(x, n),1) %% 1 == 0]
+
+# write out taxon names
+write.csv(df_taxa %>% select(name, id, taxon),file='outputs/df_taxa_raw.csv',row.names=F)
+
+
 ### HEATMAPS - states that are the least costly to reach
 draw_heatmap <- function(matrix_list, i)
 {
@@ -61,7 +67,8 @@ draw_heatmap_all = function(matrix_list)
 df_top_to = data_processed %>% 
   group_by(name) %>% 
   arrange(proportional_cost_improvement) %>%
-  slice_tail(n=50) %>% select(name,to,n)
+  slice_tail(n=50) %>% select(name,to,n) %>%
+  mutate(name = as.character(name))
 
 matrix_list_top_to = by(df_top_to, df_top_to$name, function(x) {
   m = matrix(data=0,nrow=nrow(x),ncol=max(x$n))
@@ -126,8 +133,8 @@ do_rf <- function(df, yvar, xvars)
          seed=1,
          respect.unordered.factors = TRUE,
          # tuning parameters
-         #mtry=5,
-         #num.trees=1000
+         mtry=3,
+         num.trees=500
   )
 }
 
@@ -136,10 +143,10 @@ do_pdps <- function(m_rf, df_train, xvars)
   df_train_this = df_train %>% sample_n(5000)
   pdps = rbindlist(lapply(setdiff(xvars,c("name")), function(xvar) {
     message(xvar)
-    pdp_this = partial(m_rf, pred.var=xvar,#c(xvar,"name"), 
+    pdp_this = partial(m_rf, pred.var=c(xvar,"name"), 
                        train=df_train_this,
                        progress='text',
-                       grid.resolution=5,
+                       grid.resolution=10,
                        plot=FALSE,
                        chull=TRUE)
     pdp_this$predictor_name=xvar
@@ -147,7 +154,7 @@ do_pdps <- function(m_rf, df_train, xvars)
     pdp_this = pdp_this %>% 
       as_tibble %>%
       mutate(xval = as.numeric(as.character(xval)), 
-             #name = as.character(name), 
+             name = as.character(name), 
              predictor_name = as.character(predictor_name))
     return(pdp_this)
   }))
@@ -158,12 +165,26 @@ do_pdps <- function(m_rf, df_train, xvars)
 # trim and scale the dataset
 data_processed = data_processed %>%
   mutate(delta_A = A_to_mean - A_from_mean) %>%
-  mutate(delta_r = r_to_mean - r_from_mean) %>%
+  mutate(delta_r = r_to_mean - r_from_mean)# %>%
 # calculate a proportional length improvement (can be > 1 if the a* path is more circuitous, don't include naturals as they don't take time)
-  mutate(proportional_length_improvement = 1 - (path_length_astar - num_transitions_natural) / (path_length))
+#  mutate(proportional_length_improvement = 1 - (path_length_astar - num_transitions_natural) / (path_length))
 
-xvars <- c("richness_from", "richness_to","jaccard_vals", "net_species_gain", "name", "n", "m", "A_from_mean", "r_from_mean", "A_to_mean", "r_to_mean","delta_A", "delta_r")# 
-xvars_to_trim = c("A_from_mean", "r_from_mean", "A_to_mean", "r_to_mean","delta_A", "delta_r")#c("A_from_mean", "r_from_mean", "A_to_mean", "r_to_mean") # #
+xvars <- c(#"richness_from", 
+           #"richness_to",
+           "jaccard_vals", 
+           "net_species_gain", 
+           "name", 
+           "n", 
+           "m", 
+           #"A_from_mean", 
+           #"r_from_mean", 
+           #"A_to_mean", 
+           #"r_to_mean",
+           "delta_A", 
+           "delta_r",
+           "proportion_states")# 
+xvars_to_trim = c(#"A_from_mean", "r_from_mean", "A_to_mean", "r_to_mean",
+                  "delta_A", "delta_r")#c("A_from_mean", "r_from_mean", "A_to_mean", "r_to_mean") # #
 
 data_processed_trimmed = trim_scale_df(data_processed, xvars_to_trim, scale = FALSE, val_max = 5)
 data_processed_trimmed_melted = reshape2::melt(data_processed_trimmed[,xvars],id.vars='name')
@@ -171,9 +192,25 @@ data_processed_trimmed_melted = reshape2::melt(data_processed_trimmed[,xvars],id
 # plot distributions
 g_predictor_distribution = ggplot(data_processed_trimmed_melted, aes(x=value,color=name)) + 
   geom_density() + 
-  facet_wrap(~variable,scales='free') +
+  facet_wrap(~variable,scales='free', labeller = labeller(variable=
+                                                            c(jaccard_vals="Net Jaccard similarity", 
+                                                              n="# species in dataset (n)", 
+                                                              m="# environments in dataset (m)",
+                                                              richness_from="Starting richness",
+                                                              richness_to="Target richness",
+                                                              net_species_gain="Net richness change",
+                                                              A_from_mean="Starting A",
+                                                              r_from_mean="Starting r",
+                                                              A_to_mean="Target A",
+                                                              r_to_mean="Target r",
+                                                              delta_A = "Net A change",
+                                                              delta_r = "Net r change",
+                                                              proportion_states = "Frac. feasible+stable"))) +
   theme_bw() +
-  scale_color_brewer(palette='Set1')
+  scale_color_brewer(palette='Set1',name='Dataset') +
+  xlab("Value") +
+  ylab("Probability density") +
+  scale_x_continuous(breaks = int_breaks_rounded, limits=function(x) { c(floor(min(x)), ceiling(max(x)))  })
 ggsave(g_predictor_distribution, file='outputs/g_predictor_distribution.png',width=10,height=7)
 
 # find rows with NA predictors
@@ -182,27 +219,35 @@ data_processed_trimmed = data_processed_trimmed[-rows_na,]
 
 # run random forest on the NA-dropped rows
 # cost improvement
-m_rf_pci = do_rf(data_processed_trimmed, 
-             yvar = "proportional_cost_improvement", 
-             xvars = xvars)
+do_models = TRUE
 
-pdps_pci = do_pdps(m_rf_pci, data_processed_trimmed, xvars)
-
-# length improvement
-m_rf_pli = do_rf(data_processed_trimmed, 
-                 yvar = "proportional_length_improvement", 
-                 xvars = xvars)
-
-pdps_pli = do_pdps(m_rf_pli, data_processed_trimmed, xvars)
-
-
-int_breaks_rounded <- function(x, n = 5)  pretty(x, n)[round(pretty(x, n),1) %% 1 == 0]
+if (do_models==TRUE)
+{
+  m_rf_pci = do_rf(data_processed_trimmed, 
+               yvar = "proportional_cost_improvement", 
+               xvars = xvars)
+  
+  pdps_pci = do_pdps(m_rf_pci, data_processed_trimmed, xvars)
+  
+  # length improvement
+  # m_rf_pli = do_rf(data_processed_trimmed, 
+  #                  yvar = "proportional_length_improvement", 
+  #                  xvars = xvars)
+  # 
+  # pdps_pli = do_pdps(m_rf_pli, data_processed_trimmed, xvars)
+  
+  ## save PDPS and rf
+  save(m_rf_pci, pdps_pci, 
+       #m_rf_pci, pdps_pli, 
+       file='models pdps.Rdata')
+} else
+{
+  load('outputs/models pdps.Rdata')
+}
 
 plot_pdp <- function(pdps, ylab)
 {
-  
-  
-  g_pdps = ggplot(pdps,aes(x=xval,y=yhat)) + #,col=name,group=name,shape=name)) + 
+  g_pdps = ggplot(pdps,aes(x=xval,y=yhat,col=name,group=name,shape=name)) + 
     geom_line() + 
     geom_point(size=2) +
     facet_wrap(~predictor_name,scales='free_x', labeller = labeller(predictor_name=
@@ -217,7 +262,8 @@ plot_pdp <- function(pdps, ylab)
                                                                         A_to_mean="Target A",
                                                                         r_to_mean="Target r",
                                                                         delta_A = "Net A change",
-                                                                        delta_r = "Net r change"))) +
+                                                                        delta_r = "Net r change",
+                                                                        proportion_states = "Frac. feasible+stable"))) +
     theme_bw() +
     ylab(ylab) +
     xlab("Predictor value") +
@@ -225,18 +271,19 @@ plot_pdp <- function(pdps, ylab)
     theme(legend.position='bottom') +
     scale_color_brewer(palette='Set1') +
     #scale_color_manual(values = unname(alphabet())) +
-    scale_x_continuous(breaks = int_breaks_rounded)
+    scale_x_continuous(breaks = int_breaks_rounded, limits=function(x) { c(floor(min(x)), ceiling(max(x))) } )
   
   return(g_pdps)
 }
-warning('eventually put the name variable back in, runs slower')
 
 g_pdps_pci = plot_pdp(pdps_pci, "Proportional cost improvement")
-ggsave(g_pdps_pci, file='outputs/g_pdps_pci.png',width=8,height=5)
+ggsave(g_pdps_pci, file='outputs/g_pdps_pci.png',width=7.5,height=8)
 
-g_pdps_pli = plot_pdp(pdps_pli, "Proportional length improvement")
-ggsave(g_pdps_pli, file='outputs/g_pdps_pli.png',width=8,height=5)
+# g_pdps_pli = plot_pdp(pdps_pli, "Proportional length improvement")
+# ggsave(g_pdps_pli, file='outputs/g_pdps_pli.png',width=8,height=5)
+# 
 
+ 
 
 
 
@@ -259,11 +306,11 @@ plot_histogram <- function(df, yvar, ylab)
 
 ggsave(plot_histogram(data_processed, yvar="proportional_cost_improvement", ylab="Proportional cost improvement"), 
        file='outputs/g_histogram_pci.png',
-       width=8,height=8)
+       width=8,height=6)
 
-ggsave(plot_histogram(data_processed, yvar="proportional_length_improvement", ylab="Proportional length improvement"), 
-       file='outputs/g_histogram_pli.png',
-       width=8,height=8)
+# ggsave(plot_histogram(data_processed, yvar="proportional_length_improvement", ylab="Proportional length improvement"), 
+#        file='outputs/g_histogram_pli.png',
+#        width=8,height=6)
 
 
 
@@ -271,25 +318,23 @@ table_summaries = data_processed %>%
   group_by(name) %>% 
   summarize(prob.pci.0.1=length(which(proportional_cost_improvement>0.1))/length(proportional_cost_improvement),
             pci.mean = mean(proportional_cost_improvement),
-            pli.mean = mean(proportional_length_improvement),
-            num_pairs_candidate = unique(num_states_candidate),
-            num_states_total = unique(num_states_total),
+            pci.sd = sd(proportional_cost_improvement),
+            #pli.mean = mean(proportional_length_improvement),
+            #num_pairs_candidate = unique(num_states_candidate),
+            proportion_fs = mean(proportion_states),
             n = unique(n),
             m = unique(m),
-            fraction_transitions_to_from_feasible_stable = num_pairs_candidate / (num_states_total*(num_states_total-1))) %>%
-  mutate(simulated = grepl("Simulated",name))
-# fix the simulated ones since we don't know the true denominator in this case (cross entropy sampling) 
-rows_simulated = which(table_summaries$simulated==TRUE)
-table_summaries$fraction_transitions_to_from_feasible_stable[rows_simulated] = 0.25 / (2^table_summaries$n[rows_simulated]*table_summaries$m[rows_simulated])
-
+            )
 table_summaries_to_print = table_summaries %>%
   select(name, 
          n,
          m,
+         proportion_fs,
          prob.pci.0.1,
          pci.mean,
-         pli.mean,
-         fraction_transitions_to_from_feasible_stable)
+         #pli.mean,
+         ) %>%
+  mutate(across(proportion_fs:pci.mean, round, digits=2))
 write.csv(table_summaries_to_print, file='outputs/table_summaries_to_print.csv',row.names=F)
 
 
@@ -303,10 +348,6 @@ write.csv(table_summaries_to_print, file='outputs/table_summaries_to_print.csv',
 
 
 
-paths_all = data_processed %>% 
-  filter(name=="Ciliate (t5)") %>%
-  filter(proportional_cost_improvement > 0) %>%
-  sample_n(10)
 
 plot_paths <- function(path_arg, name_arg, cost_max, richness_max, action_max, show_y_axis, title_text)
 {
@@ -385,7 +426,7 @@ plot_paths <- function(path_arg, name_arg, cost_max, richness_max, action_max, s
 
 
 
-plot_paths_comparison <- function(paths_all, i)
+plot_paths_comparison <- function(paths_all, i, save=TRUE)
 {
   cost_max = max(paths_all$net_cost_astar[i],paths_all$net_cost[i]) 
   action_max = max(paths_all$path_length[i],paths_all$path_length_astar[i])
@@ -397,7 +438,7 @@ plot_paths_comparison <- function(paths_all, i)
                action_max = action_max,
                richness_max = richness_max,
                show_y_axis = TRUE,
-               title_text="A* path")
+               title_text="Optimal path")
   
   g_nominal = plot_paths(path_arg = paths_all$path_nominal[i], 
                          name_arg = paths_all$name[i],
@@ -411,18 +452,105 @@ plot_paths_comparison <- function(paths_all, i)
             nrow=2,ncol=2,heights=c(1,3),
             align='v')
   
-  ggsave(g_final, file=sprintf('outputs/paths_comparison_%d.png',i),
-         width=8,height=6)
+  if (save==TRUE)
+  {
+    ggsave(g_final, file=sprintf('outputs/paths_comparison_%d_%s.png',i,paths_all$name[i]),
+         width=7,height=5)
+  }
   
   cat('.')
   
   return(g_final)
 }
 
+set.seed(2)
+high_pci_ids = data_processed %>% 
+  mutate(row = 1:nrow(.)) %>%
+  group_by(name) %>%
+  arrange(proportional_cost_improvement) %>%
+  filter(path_length_astar > 1 & proportional_cost_improvement > 0.1) %>%
+  sample_n(15) %>%
+  pull(row)
 
-high_pci_ids = which(data_processed$proportional_cost_improvement > 0.5 & data_processed$path_length_astar > 5) %>% 
-  sample(10)
+plots_paths_example = lapply(high_pci_ids, plot_paths_comparison, paths_all = data_processed, save=FALSE)
+pdf(file='outputs/g_paths_examples.pdf',width=7,height=7)
+for (i in 1:length(high_pci_ids))
+{
+  cat('+')
+  print(plots_paths_example[[i]])
+}
+dev.off()
 
-plots_paths_example = lapply(high_pci_ids, plot_paths_comparison, paths_all = data_processed)
+# find interesting cases
+
+# identify which is Clodif 
+id_clodif = df_taxa %>% 
+  filter(name=="Mouse gut" & taxon=="Clodif") %>% 
+  mutate(id = as.character(id)) %>%
+  pull(id)
+
+data_lost_clodif = data_processed %>% 
+  mutate(row = 1:nrow(data_processed)) %>%
+  filter(name=="Mouse gut") %>% 
+  mutate(has_clodif_initial = grepl(id_clodif, from)) %>% 
+  mutate(has_clodif_target = grepl(id_clodif, to)) %>% 
+  filter(has_clodif_initial==TRUE & has_clodif_target==FALSE)
+
+# this next part is a little slow! lots of regex...
+do_regex = FALSE
+if (do_regex==TRUE)
+{
+  pb = progress_bar$new(total = nrow(data_lost_clodif), format = "[:bar] :current :total")
+  natural_losses = sapply(1:nrow(data_lost_clodif), function(i) {
+    pb$tick()
+    
+    yesno = get_path_df(data_lost_clodif$path_astar[i]) %>% # get the i'th path
+      mutate(has_clodif = grepl(id_clodif, state)) %>% # determine if it has clodif at each transition
+      mutate(lost_clodif = c(as.logical(abs(diff(has_clodif))), NA)) %>% # find out when it lost clodif
+      summarize(lost_clodif_natural = any(lost_clodif==TRUE & transition==">", na.rm=T)) # whether the time of loss is also a natural transition
+    
+    return(yesno)
+  })
+  save(natural_losses,file='clodif_natural_losses.Rdata')
+} else
+{
+  load('clodif_natural_losses.Rdata')
+}
+
+data_lost_clodif$lost_clodif_natural_transition = unlist(natural_losses)
+
+table_lost_clodif = data_lost_clodif %>% 
+  group_by(lost_clodif_natural_transition) %>% 
+  summarize(pci.mean = mean(proportional_cost_improvement), count=n()) %>%
+  mutate(frac = count / sum(count))
+
+sum(table_lost_clodif$count)
+table_lost_clodif
+
+rows_clodif = data_lost_clodif %>% filter(richness_to > 2 & 
+                                            lost_clodif_natural_transition==TRUE & 
+                                            richness_from > 3 & 
+                                            proportional_cost_improvement > 0.4 &
+                                            net_length_improvement > 0) %>% pull(row)
+
+plot_paths_comparison(data_processed,i = rows_clodif[1114])
+
+
+
+
+
+rows_ciliate = data_processed %>% 
+  mutate(row = 1:nrow(.)) %>%
+  filter(name=="Ciliate (m=3)") %>%
+  filter(proportional_cost_improvement > 0.2 & num_transitions_environment==1 & richness_to > 0) %>% sample_n(20) %>% pull(row)
+
+plot_paths_comparison(data_processed, i = rows_ciliate[7]) # 2, 5
+
+
+
+# two interesting cases
+g_paths_interesting = lapply(c(rows_clodif[1114], rows_ciliate[7]), plot_paths_comparison, paths_all = data_processed, save=FALSE)
+
+ggsave(ggarrange(plotlist=g_paths_interesting, nrow=2,ncol=1,labels='auto'),width=7,height=7,file='outputs/g_paths_interesting.png')
 
 

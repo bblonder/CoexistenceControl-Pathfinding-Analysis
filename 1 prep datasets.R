@@ -212,10 +212,16 @@ process_dataset <- function(fn_astar, fn_A, fn_r, name, params_A=NULL, params_r=
   data = prep_data(data, params_A, params_r)
   
   # get info on fraction of states
-  text_state_counts = readLines(gsub("csv$","txt",fn_astar))[19:20]
+  text_state_counts = readLines(gsub("csv$","txt",fn_astar))
+  first_line = grep("Statistics:", text_state_counts,fixed=TRUE)
+  text_state_counts = text_state_counts[(first_line+1):(first_line+4)]
+  print(text_state_counts)
   nums_state_counts = as.numeric(sapply(strsplit(text_state_counts, ": "), tail, 1))
-  data$num_states_candidate = nums_state_counts[1]
-  data$num_states_total = nums_state_counts[2]
+  data$proportion_states = nums_state_counts[1]
+  data$num_states_candidate = nums_state_counts[2]
+  data$num_states_total = nums_state_counts[3]
+  data$num_states_total_evaluated = nums_state_counts[4]
+  data$num_rows = nrow(data)
   
   return(list(data=data,
               params_r=params_r,
@@ -230,80 +236,80 @@ process_dataset <- function(fn_astar, fn_A, fn_r, name, params_A=NULL, params_r=
 
 
 # LOAD IN DATASETS
-data_mouse_gut = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Bucci_Mon_29_Nov_2021_17_18.csv',
+data_mouse_gut = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Bucci_Wed_29_Dec_2021_16_20.csv',
                                  fn_A = '../CoexistenceControl-Private/data/dataset/bucci/a_matrix.csv',
                                  fn_r = '../CoexistenceControl-Private/data/dataset/bucci/r_vector.csv',
                                  name = 'Mouse gut')
 
-data_human_gut = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Venturelli_Mon_29_Nov_2021_17_14.csv',
+data_human_gut = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Venturelli_Wed_29_Dec_2021_16_17.csv',
                                  fn_A = '../CoexistenceControl-Private/data/dataset/venturelli/a_matrix.csv',
                                  fn_r = '../CoexistenceControl-Private/data/dataset/venturelli/r_vector.csv',
                                  name = 'Human gut')
 
-data_ciliate_t1 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Maynard_Thu_16_Dec_2021_14_54.csv',
+data_ciliate_m1 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Maynard_Wed_29_Dec_2021_16_22.csv',
                                      fn_A = '../CoexistenceControl-Private/data/dataset/maynard/17/a_matrix.csv',
                                      fn_r = '../CoexistenceControl-Private/data/dataset/maynard/17/r_vector.csv',
-                                     name = 'Ciliate (t1)')
+                                     name = 'Ciliate (m=1)')
 
-data_ciliate_t3 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Maynard15-19-23_Mon_29_Nov_2021_17_19.csv',
+data_ciliate_m3 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Maynard15-19-23_Wed_29_Dec_2021_16_29.csv',
                                  fn_A = c('../CoexistenceControl-Private/data/dataset/maynard/15/a_matrix.csv','../CoexistenceControl-Private/data/dataset/maynard/19/a_matrix.csv','../CoexistenceControl-Private/data/dataset/maynard/23/a_matrix.csv'),
                                  fn_r = c('../CoexistenceControl-Private/data/dataset/maynard/15/r_vector.csv','../CoexistenceControl-Private/data/dataset/maynard/19/r_vector.csv','../CoexistenceControl-Private/data/dataset/maynard/23/r_vector.csv'),
-                                 name = 'Ciliate (t3)')
+                                 name = 'Ciliate (m=3)')
 
-data_ciliate_t5 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Maynard15-17-19-21-23_Mon_29_Nov_2021_17_20.csv',
+data_ciliate_m5 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Maynard15-17-19-21-23_Wed_29_Dec_2021_16_34.csv',
                                      fn_A = c('../CoexistenceControl-Private/data/dataset/maynard/15/a_matrix.csv','../CoexistenceControl-Private/data/dataset/maynard/17/a_matrix.csv','../CoexistenceControl-Private/data/dataset/maynard/19/a_matrix.csv','../CoexistenceControl-Private/data/dataset/maynard/21/a_matrix.csv','../CoexistenceControl-Private/data/dataset/maynard/23/a_matrix.csv'),
                                      fn_r = c('../CoexistenceControl-Private/data/dataset/maynard/15/r_vector.csv','../CoexistenceControl-Private/data/dataset/maynard/17/r_vector.csv','../CoexistenceControl-Private/data/dataset/maynard/19/r_vector.csv','../CoexistenceControl-Private/data/dataset/maynard/21/r_vector.csv','../CoexistenceControl-Private/data/dataset/maynard/23/r_vector.csv'),
-                                     name = 'Ciliate (t5)')
+                                     name = 'Ciliate (m=5)')
 
-data_protist = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Carrara_Mon_29_Nov_2021_17_19.csv',
+data_protist = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Carrara_Wed_29_Dec_2021_16_27.csv',
                                  fn_A = '../CoexistenceControl-Private/data/dataset/carrara/a_matrix.csv',
                                  fn_r = '../CoexistenceControl-Private/data/dataset/carrara/r_vector.csv',
                                  name = 'Protist')
 
-data_simulated_n5_t3 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/synthetic/n5_t3/astar_results_synthetic_n5_t3_i1_Wed_1_Dec_2021_03_06.csv',
+data_simulated_n5_m3 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/synthetic/n5_t3/astar_results_synthetic_n5_t3_i1_Wed_29_Dec_2021_17_18.csv',
                                        fn_A = NULL,
-                                       params_A = parse_simulated_parameters('../CoexistenceControl-Private/data/results/synthetic/n5_t3/astar_results_synthetic_n5_t3_i1_Wed_1_Dec_2021_03_06.txt', n_sp=5)$params_A,
+                                       params_A = parse_simulated_parameters('../CoexistenceControl-Private/data/results/synthetic/n5_t3/astar_results_synthetic_n5_t3_i1_Wed_29_Dec_2021_17_18.txt', n_sp=5)$params_A,
                                        fn_r = NULL,
-                                       params_r = parse_simulated_parameters('../CoexistenceControl-Private/data/results/synthetic/n5_t3/astar_results_synthetic_n5_t3_i1_Wed_1_Dec_2021_03_06.txt', n_sp=5)$params_r,
-                                       name = 'Simulated n5t3')
+                                       params_r = parse_simulated_parameters('../CoexistenceControl-Private/data/results/synthetic/n5_t3/astar_results_synthetic_n5_t3_i1_Wed_29_Dec_2021_17_18.txt', n_sp=5)$params_r,
+                                       name = 'Simulated (n=5 m=3)')
 
-data_simulated_n10_t1 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/synthetic/n10_t1/astar_results_synthetic_n10_t1_i1_Wed_1_Dec_2021_03_07.csv',
+data_simulated_n10_m1 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/synthetic/n10_t1/astar_results_synthetic_n10_t1_i1_Wed_29_Dec_2021_17_25.csv',
                                        fn_A = NULL,
-                                       params_A = parse_simulated_parameters('../CoexistenceControl-Private/data/results/synthetic/n10_t1/astar_results_synthetic_n10_t1_i1_Wed_1_Dec_2021_03_07.txt', n_sp=10)$params_A,
+                                       params_A = parse_simulated_parameters('../CoexistenceControl-Private/data/results/synthetic/n10_t1/astar_results_synthetic_n10_t1_i1_Wed_29_Dec_2021_17_25.txt', n_sp=10)$params_A,
                                        fn_r = NULL,
-                                       params_r = parse_simulated_parameters('../CoexistenceControl-Private/data/results/synthetic/n10_t1/astar_results_synthetic_n10_t1_i1_Wed_1_Dec_2021_03_07.txt', n_sp=10)$params_r,
-                                       name = 'Simulated n10t1')
+                                       params_r = parse_simulated_parameters('../CoexistenceControl-Private/data/results/synthetic/n10_t1/astar_results_synthetic_n10_t1_i1_Wed_29_Dec_2021_17_25.txt', n_sp=10)$params_r,
+                                       name = 'Simulated (n=10 m=1)')
 
-data_simulated_n15_t1 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/synthetic/n15_t1/astar_results_synthetic_n15_t1_i1_Wed_1_Dec_2021_11_19.csv',
+data_simulated_n15_m1 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/synthetic/n15_t1/astar_results_synthetic_n15_t1_i1_Wed_29_Dec_2021_17_25.csv',
                                         fn_A = NULL,
-                                        params_A = parse_simulated_parameters('../CoexistenceControl-Private/data/results/synthetic/n15_t1/astar_results_synthetic_n15_t1_i1_Wed_1_Dec_2021_11_19.txt', n_sp=15)$params_A,
+                                        params_A = parse_simulated_parameters('../CoexistenceControl-Private/data/results/synthetic/n15_t1/astar_results_synthetic_n15_t1_i1_Wed_29_Dec_2021_17_25.txt', n_sp=15)$params_A,
                                         fn_r = NULL,
-                                        params_r = parse_simulated_parameters('../CoexistenceControl-Private/data/results/synthetic/n15_t1/astar_results_synthetic_n15_t1_i1_Wed_1_Dec_2021_11_19.txt', n_sp=15)$params_r,
-                                        name = 'Simulated n15t1')
+                                        params_r = parse_simulated_parameters('../CoexistenceControl-Private/data/results/synthetic/n15_t1/astar_results_synthetic_n15_t1_i1_Wed_29_Dec_2021_17_25.txt', n_sp=15)$params_r,
+                                        name = 'Simulated (n=15 m=1)')
 
 # put datasets together
 data_processed = rbind(data_mouse_gut$data, 
                        data_human_gut$data, 
-                       data_ciliate_t1$data, 
-                       data_ciliate_t3$data, 
-                       data_ciliate_t5$data, 
+                       data_ciliate_m1$data, 
+                       data_ciliate_m3$data, 
+                       data_ciliate_m5$data, 
                        data_protist$data,
-                       data_simulated_n5_t3$data,
-                       data_simulated_n10_t1$data,
-                       data_simulated_n15_t1$data
+                       data_simulated_n5_m3$data,
+                       data_simulated_n10_m1$data,
+                       data_simulated_n15_m1$data
   )
 
 # also make a list by name of datasets
 datasets_all = list(
-  `Ciliate (t5)`=data_ciliate_t5,
-  `Ciliate (t3)`=data_ciliate_t3,
-  `Ciliate (t1)`=data_ciliate_t1,
+  `Ciliate (m=5)`=data_ciliate_m5,
+  `Ciliate (m=3)`=data_ciliate_m3,
+  `Ciliate (m=1)`=data_ciliate_m1,
   `Human gut`=data_human_gut,
   `Mouse gut`=data_mouse_gut,
   `Protist`=data_protist,
-  `Simulated n10t1`=data_simulated_n10_t1,
-  `Simulated n15t1`=data_simulated_n15_t1,
-  `Simulated n5t3`=data_simulated_n5_t3
+  `Simulated (n=5 m=3)`=data_simulated_n5_m3,
+  `Simulated (n=10 m=1)`=data_simulated_n10_m1,
+  `Simulated (n=15 m=1)`=data_simulated_n15_m1
 )
 
 # make table of all the species
@@ -313,13 +319,13 @@ make_taxa_df <- function(dataset)
 }
 df_taxa = rbindlist(lapply(list(data_mouse_gut, 
                                 data_human_gut, 
-                                data_ciliate_t1, 
-                                data_ciliate_t3, 
-                                data_ciliate_t5, 
+                                data_ciliate_m1, 
+                                data_ciliate_m3, 
+                                data_ciliate_m5, 
                                 data_protist,
-                                data_simulated_n5_t3,
-                                data_simulated_n10_t1,
-                                data_simulated_n15_t1), make_taxa_df))
+                                data_simulated_n5_m3,
+                                data_simulated_n10_m1,
+                                data_simulated_n15_m1), make_taxa_df))
 # make short names
 short_names = sapply(df_taxa$taxon, function(taxon) { 
   paste(sapply(strsplit(taxon, split=" ")[[1]], function(x) {substr(x,start=1,stop=3)}),collapse="") 
