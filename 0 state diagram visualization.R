@@ -282,6 +282,7 @@ layout_network <- function(graph)
 
 plot_transitions <- function(network, edge_highlight=NULL, vertex_highlight_start=NULL, vertex_highlight_end=NULL)
 {
+  V(network)$name = gsub(" ","",V(network)$name)
   edge_types = E(network)$type
   
   edge_colors = c(natural=rgb(0,0,1),addition=rgb(1,0.5,0,0.5),deletion=rgb(1,0,0,0.5))[edge_types]
@@ -317,9 +318,9 @@ plot_transitions <- function(network, edge_highlight=NULL, vertex_highlight_star
        vertex.frame.color=vertex_frame_colors,
        vertex.shape=vertex_shapes,
        vertex.label.family='sans',
-       vertex.size=9,
-       vertex.size2=4,
-       vertex.label.cex=0.35,
+       vertex.size=10,
+       vertex.size2=10,
+       vertex.label.cex=0.7,
        vertex.label.color='black',
        vertex.color=vertex_colors)
 }

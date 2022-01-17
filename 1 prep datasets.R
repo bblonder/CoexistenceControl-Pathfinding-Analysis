@@ -236,55 +236,55 @@ process_dataset <- function(fn_astar, fn_A, fn_r, name, params_A=NULL, params_r=
 
 
 # LOAD IN DATASETS
-data_mouse_gut = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Bucci_Wed_29_Dec_2021_16_20.csv',
+data_mouse_gut = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Bucci_Wed_12_Jan_2022_04_43.csv',
                                  fn_A = '../CoexistenceControl-Private/data/dataset/bucci/a_matrix.csv',
                                  fn_r = '../CoexistenceControl-Private/data/dataset/bucci/r_vector.csv',
                                  name = 'Mouse gut')
 
-data_human_gut = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Venturelli_Wed_29_Dec_2021_16_17.csv',
+data_human_gut = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Venturelli_Wed_12_Jan_2022_04_31.csv',
                                  fn_A = '../CoexistenceControl-Private/data/dataset/venturelli/a_matrix.csv',
                                  fn_r = '../CoexistenceControl-Private/data/dataset/venturelli/r_vector.csv',
                                  name = 'Human gut')
 
-data_ciliate_m1 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Maynard_Wed_29_Dec_2021_16_22.csv',
+data_ciliate_m1 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Maynard_Wed_12_Jan_2022_04_43.csv',
                                      fn_A = '../CoexistenceControl-Private/data/dataset/maynard/17/a_matrix.csv',
                                      fn_r = '../CoexistenceControl-Private/data/dataset/maynard/17/r_vector.csv',
                                      name = 'Ciliate (m=1)')
 
-data_ciliate_m3 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Maynard15-19-23_Wed_29_Dec_2021_16_29.csv',
+data_ciliate_m3 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Maynard15-19-23_Wed_12_Jan_2022_04_43.csv',
                                  fn_A = c('../CoexistenceControl-Private/data/dataset/maynard/15/a_matrix.csv','../CoexistenceControl-Private/data/dataset/maynard/19/a_matrix.csv','../CoexistenceControl-Private/data/dataset/maynard/23/a_matrix.csv'),
                                  fn_r = c('../CoexistenceControl-Private/data/dataset/maynard/15/r_vector.csv','../CoexistenceControl-Private/data/dataset/maynard/19/r_vector.csv','../CoexistenceControl-Private/data/dataset/maynard/23/r_vector.csv'),
                                  name = 'Ciliate (m=3)')
 
-data_ciliate_m5 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Maynard15-17-19-21-23_Wed_29_Dec_2021_16_34.csv',
+data_ciliate_m5 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Maynard15-17-19-21-23_Wed_12_Jan_2022_04_44.csv',
                                      fn_A = c('../CoexistenceControl-Private/data/dataset/maynard/15/a_matrix.csv','../CoexistenceControl-Private/data/dataset/maynard/17/a_matrix.csv','../CoexistenceControl-Private/data/dataset/maynard/19/a_matrix.csv','../CoexistenceControl-Private/data/dataset/maynard/21/a_matrix.csv','../CoexistenceControl-Private/data/dataset/maynard/23/a_matrix.csv'),
                                      fn_r = c('../CoexistenceControl-Private/data/dataset/maynard/15/r_vector.csv','../CoexistenceControl-Private/data/dataset/maynard/17/r_vector.csv','../CoexistenceControl-Private/data/dataset/maynard/19/r_vector.csv','../CoexistenceControl-Private/data/dataset/maynard/21/r_vector.csv','../CoexistenceControl-Private/data/dataset/maynard/23/r_vector.csv'),
                                      name = 'Ciliate (m=5)')
 
-data_protist = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Carrara_Wed_29_Dec_2021_16_27.csv',
+data_protist = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/experimental/astar_results_Carrara_Wed_12_Jan_2022_04_43.csv',
                                  fn_A = '../CoexistenceControl-Private/data/dataset/carrara/a_matrix.csv',
                                  fn_r = '../CoexistenceControl-Private/data/dataset/carrara/r_vector.csv',
                                  name = 'Protist')
 
-data_simulated_n5_m3 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/synthetic/n5_t3/astar_results_synthetic_n5_t3_i1_Wed_29_Dec_2021_17_18.csv',
+data_simulated_n5_m3 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/synthetic/n5_t3/astar_results_synthetic_n5_t3_i1_Wed_12_Jan_2022_04_44.csv',
                                        fn_A = NULL,
-                                       params_A = parse_simulated_parameters('../CoexistenceControl-Private/data/results/synthetic/n5_t3/astar_results_synthetic_n5_t3_i1_Wed_29_Dec_2021_17_18.txt', n_sp=5)$params_A,
+                                       params_A = parse_simulated_parameters('../CoexistenceControl-Private/data/results/synthetic/n5_t3/astar_results_synthetic_n5_t3_i1_Wed_12_Jan_2022_04_44.txt', n_sp=5)$params_A,
                                        fn_r = NULL,
-                                       params_r = parse_simulated_parameters('../CoexistenceControl-Private/data/results/synthetic/n5_t3/astar_results_synthetic_n5_t3_i1_Wed_29_Dec_2021_17_18.txt', n_sp=5)$params_r,
+                                       params_r = parse_simulated_parameters('../CoexistenceControl-Private/data/results/synthetic/n5_t3/astar_results_synthetic_n5_t3_i1_Wed_12_Jan_2022_04_44.txt', n_sp=5)$params_r,
                                        name = 'Simulated (n=5 m=3)')
 
-data_simulated_n10_m1 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/synthetic/n10_t1/astar_results_synthetic_n10_t1_i1_Wed_29_Dec_2021_17_25.csv',
+data_simulated_n10_m1 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/synthetic/n10_t1/astar_results_synthetic_n10_t1_i1_Wed_12_Jan_2022_04_45.csv',
                                        fn_A = NULL,
-                                       params_A = parse_simulated_parameters('../CoexistenceControl-Private/data/results/synthetic/n10_t1/astar_results_synthetic_n10_t1_i1_Wed_29_Dec_2021_17_25.txt', n_sp=10)$params_A,
+                                       params_A = parse_simulated_parameters('../CoexistenceControl-Private/data/results/synthetic/n10_t1/astar_results_synthetic_n10_t1_i1_Wed_12_Jan_2022_04_45.txt', n_sp=10)$params_A,
                                        fn_r = NULL,
-                                       params_r = parse_simulated_parameters('../CoexistenceControl-Private/data/results/synthetic/n10_t1/astar_results_synthetic_n10_t1_i1_Wed_29_Dec_2021_17_25.txt', n_sp=10)$params_r,
+                                       params_r = parse_simulated_parameters('../CoexistenceControl-Private/data/results/synthetic/n10_t1/astar_results_synthetic_n10_t1_i1_Wed_12_Jan_2022_04_45.txt', n_sp=10)$params_r,
                                        name = 'Simulated (n=10 m=1)')
 
-data_simulated_n15_m1 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/synthetic/n15_t1/astar_results_synthetic_n15_t1_i1_Wed_29_Dec_2021_17_25.csv',
+data_simulated_n15_m1 = process_dataset(fn_astar = '../CoexistenceControl-Private/data/results/synthetic/n15_t1/astar_results_synthetic_n15_t1_i1_Wed_12_Jan_2022_04_49.csv',
                                         fn_A = NULL,
-                                        params_A = parse_simulated_parameters('../CoexistenceControl-Private/data/results/synthetic/n15_t1/astar_results_synthetic_n15_t1_i1_Wed_29_Dec_2021_17_25.txt', n_sp=15)$params_A,
+                                        params_A = parse_simulated_parameters('../CoexistenceControl-Private/data/results/synthetic/n15_t1/astar_results_synthetic_n15_t1_i1_Wed_12_Jan_2022_04_49.txt', n_sp=15)$params_A,
                                         fn_r = NULL,
-                                        params_r = parse_simulated_parameters('../CoexistenceControl-Private/data/results/synthetic/n15_t1/astar_results_synthetic_n15_t1_i1_Wed_29_Dec_2021_17_25.txt', n_sp=15)$params_r,
+                                        params_r = parse_simulated_parameters('../CoexistenceControl-Private/data/results/synthetic/n15_t1/astar_results_synthetic_n15_t1_i1_Wed_12_Jan_2022_04_49.txt', n_sp=15)$params_r,
                                         name = 'Simulated (n=15 m=1)')
 
 # put datasets together
@@ -335,7 +335,7 @@ short_names = gsub("unduncMol","undMol",short_names)
 df_taxa$taxon[df_taxa$name=="Mouse gut"] = short_names[df_taxa$name=="Mouse gut"]
 
 # additional nomenclature
-edge_labels_long = c(`>`='Natural',`-`='Species removal',`+`='Species addition',`=`='Environment change')
+edge_labels_long = c(`>`='Wait',`-`='Species removal',`+`='Species addition',`=`='Environment change')
 
 
 # save the results

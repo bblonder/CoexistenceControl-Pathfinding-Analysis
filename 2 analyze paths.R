@@ -318,6 +318,7 @@ table_summaries = data_processed %>%
   group_by(name) %>% 
   summarize(prob.pci.0.1=length(which(proportional_cost_improvement>0.1))/length(proportional_cost_improvement),
             pci.mean = mean(proportional_cost_improvement),
+            pci.nz.mean = mean(proportional_cost_improvement[proportional_cost_improvement>0]),
             pci.sd = sd(proportional_cost_improvement),
             #pli.mean = mean(proportional_length_improvement),
             #num_pairs_candidate = unique(num_states_candidate),
@@ -332,9 +333,11 @@ table_summaries_to_print = table_summaries %>%
          proportion_fs,
          prob.pci.0.1,
          pci.mean,
+         pci.sd,
+         pci.nz.mean,
          #pli.mean,
          ) %>%
-  mutate(across(proportion_fs:pci.mean, round, digits=2))
+  mutate(across(proportion_fs:pci.nz.mean, round, digits=2))
 write.csv(table_summaries_to_print, file='outputs/table_summaries_to_print.csv',row.names=F)
 
 
@@ -497,7 +500,7 @@ data_lost_clodif = data_processed %>%
   filter(has_clodif_initial==TRUE & has_clodif_target==FALSE)
 
 # this next part is a little slow! lots of regex...
-do_regex = FALSE
+do_regex = TRUE
 if (do_regex==TRUE)
 {
   pb = progress_bar$new(total = nrow(data_lost_clodif), format = "[:bar] :current :total")
@@ -521,8 +524,12 @@ data_lost_clodif$lost_clodif_natural_transition = unlist(natural_losses)
 
 table_lost_clodif = data_lost_clodif %>% 
   group_by(lost_clodif_natural_transition) %>% 
-  summarize(pci.mean = mean(proportional_cost_improvement), count=n()) %>%
+  summarize(pci.mean = mean(proportional_cost_improvement), 
+            pci.nz.mean = mean(proportional_cost_improvement[proportional_cost_improvement>0]),
+            pci.sd = sd(proportional_cost_improvement),
+            count=n()) %>%
   mutate(frac = count / sum(count))
+write.csv(table_lost_clodif, file='outputs/table_lost_clodif.csv',row.names=F)
 
 sum(table_lost_clodif$count)
 table_lost_clodif
@@ -531,10 +538,12 @@ rows_clodif = data_lost_clodif %>% filter(richness_to > 2 &
                                             lost_clodif_natural_transition==TRUE & 
                                             richness_from > 3 & 
                                             proportional_cost_improvement > 0.4 &
-                                            net_length_improvement > 0) %>% pull(row)
+                                            net_length_improvement > 0 &
+                                            num_transitions_removal == 0 &
+                                            num_transitions_addition < 3) %>% pull(row)
 
-plot_paths_comparison(data_processed,i = rows_clodif[1114])
-
+plot_paths_comparison(data_processed,i = rows_clodif[160])
+# 11
 
 
 
@@ -544,12 +553,12 @@ rows_ciliate = data_processed %>%
   filter(name=="Ciliate (m=3)") %>%
   filter(proportional_cost_improvement > 0.2 & num_transitions_environment==1 & richness_to > 0) %>% sample_n(20) %>% pull(row)
 
-plot_paths_comparison(data_processed, i = rows_ciliate[7]) # 2, 5
+plot_paths_comparison(data_processed, i = rows_ciliate[2]) # 2, 5
 
 
 
 # two interesting cases
-g_paths_interesting = lapply(c(rows_clodif[1114], rows_ciliate[7]), plot_paths_comparison, paths_all = data_processed, save=FALSE)
+g_paths_interesting = lapply(c(rows_clodif[160], rows_ciliate[2]), plot_paths_comparison, paths_all = data_processed, save=FALSE)
 
 ggsave(ggarrange(plotlist=g_paths_interesting, nrow=2,ncol=1,labels='auto'),width=7,height=7,file='outputs/g_paths_interesting.png')
 
